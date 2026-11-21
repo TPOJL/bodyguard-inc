@@ -63,9 +63,9 @@ func update_hazard_visuals() -> void:
 		return
 	if hazard_type == HazardType.SNIPER_LASER:
 		var pulse: float = clampf(sniper_lock_timer / SNIPER_LOCK_THRESHOLD_SEC, 0.0, 1.0)
-		_zone_mat.albedo_color = Color(1.0, 0.08, 0.12).lerp(Color(1.0, 0.96, 0.25), pulse)
+		_zone_mat.albedo_color = Color(1.0, 0.10, 0.14).lerp(Color(1.0, 0.92, 0.25), pulse)
 		if _hazard_light != null:
-			_hazard_light.light_energy = 3.5 + pulse * 8.0
+			_hazard_light.light_energy = 1.6 + pulse * 2.4
 		if _label_3d != null:
 			if sniper_lock_timer > 0.05:
 				_label_3d.text = "🎯 SNIPER LOCKED: %.1fs — SHOVE VIP [F]!" % maxf(0.0, SNIPER_LOCK_THRESHOLD_SEC - sniper_lock_timer)
@@ -108,19 +108,19 @@ func _build_hazard_visuals() -> void:
 
 	match hazard_type:
 		HazardType.POISON_FOUNTAIN:
-			_zone_mat.albedo_color = Color(0.20, 1.0, 0.35)
-			_hazard_light.light_color = Color(0.18, 1.0, 0.38)
-			_hazard_light.light_energy = 4.2
+			_zone_mat.albedo_color = Color(0.20, 0.92, 0.35)
+			_hazard_light.light_color = Color(0.18, 0.92, 0.38)
+			_hazard_light.light_energy = 1.65
 			_label_3d.text = "☠️ POISON CHAMPAGNE FOUNTAIN"
 			_label_3d.modulate = Color(0.3, 1.0, 0.45)
 
 			var fmat: StandardMaterial3D = StandardMaterial3D.new()
-			fmat.albedo_color = Color(0.15, 0.95, 0.38)
-			fmat.metallic = 0.75
-			fmat.roughness = 0.08
+			fmat.albedo_color = Color(0.12, 0.78, 0.32)
+			fmat.metallic = 0.55
+			fmat.roughness = 0.16
 			fmat.emission_enabled = true
-			fmat.emission = Color(0.12, 0.88, 0.32)
-			fmat.emission_energy_multiplier = 3.2
+			fmat.emission = Color(0.10, 0.72, 0.28)
+			fmat.emission_energy_multiplier = 1.45
 
 			for tier: int in range(3):
 				var bowl: MeshInstance3D = MeshInstance3D.new()
@@ -135,17 +135,17 @@ func _build_hazard_visuals() -> void:
 				add_child(bowl)
 
 		HazardType.BALCONY_LEDGE:
-			_zone_mat.albedo_color = Color(1.0, 0.42, 0.10)
-			_hazard_light.light_color = Color(1.0, 0.45, 0.12)
-			_hazard_light.light_energy = 3.8
+			_zone_mat.albedo_color = Color(0.95, 0.42, 0.14)
+			_hazard_light.light_color = Color(0.95, 0.45, 0.14)
+			_hazard_light.light_energy = 1.6
 			_label_3d.text = "⚡ HIGH-VOLTAGE BALCONY LEDGE"
 			_label_3d.modulate = Color(1.0, 0.55, 0.2)
 
 			var emat: StandardMaterial3D = StandardMaterial3D.new()
-			emat.albedo_color = Color(1.0, 0.50, 0.12)
+			emat.albedo_color = Color(0.95, 0.45, 0.12)
 			emat.emission_enabled = true
-			emat.emission = Color(1.0, 0.42, 0.10)
-			emat.emission_energy_multiplier = 3.5
+			emat.emission = Color(0.95, 0.42, 0.10)
+			emat.emission_energy_multiplier = 1.5
 
 			var rail: MeshInstance3D = MeshInstance3D.new()
 			var rbox: BoxMesh = BoxMesh.new()
@@ -158,7 +158,7 @@ func _build_hazard_visuals() -> void:
 		HazardType.SNIPER_LASER:
 			_zone_mat.albedo_color = Color(1.0, 0.10, 0.15)
 			_hazard_light.light_color = Color(1.0, 0.12, 0.16)
-			_hazard_light.light_energy = 4.0
+			_hazard_light.light_energy = 1.65
 			_label_3d.text = "🎯 ROOFTOP SNIPER LASER"
 			_label_3d.modulate = Color(1.0, 0.28, 0.28)
 

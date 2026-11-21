@@ -20,9 +20,10 @@ signal vip_damaged(new_health: float, reason: String)
 const MAX_HEALTH: float = 100.0
 const MAX_SUSPICION: float = 100.0
 const DEFAULT_MAX_IMPULSE: float = 150.0
-const SUICIDAL_WALK_SPEED: float = 2.55
-const ARENA_HALF_EXTENT_X: float = 13.0
-const ARENA_HALF_EXTENT_Z: float = 17.0
+const SUICIDAL_WALK_SPEED: float = 2.65
+const ARENA_HALF_EXTENT_X: float = 14.0
+const ARENA_MIN_Z: float = -52.0
+const ARENA_MAX_Z: float = 48.0
 
 const BLUFF_VOICE_LINES: Array[String] = [
 	"🎙️ \"I definitely have a pulse, officer! Ha-ha!\"",
@@ -32,10 +33,14 @@ const BLUFF_VOICE_LINES: Array[String] = [
 ]
 
 var state: VipState = VipState.ALIVE
+var max_health: float = MAX_HEALTH
 var health: float = MAX_HEALTH
 var suspicion: float = 0.0
 var simulation_ticks: int = 0
 var managed_by_level: bool = false
+var wander_speed_multiplier: float = 1.0
+var security_gate_locked: bool = false
+var security_gate_z: float = -14.0
 
 # Authoritative 60 Hz physics state
 var velocity: Vector3 = Vector3.ZERO
@@ -107,7 +112,7 @@ func step_simulation(delta: float) -> void:
 				0.0,
 				cos(float(simulation_ticks) * 0.05) * 0.65
 			)
-			var drive: Vector3 = (wish_dir * SUICIDAL_WALK_SPEED) + wobble
+			var drive: Vector3 = (wish_dir * (SUICIDAL_WALK_SPEED * wander_speed_multiplier)) + wobble
 			velocity.x = lerpf(velocity.x, drive.x, clampf(delta * 4.2, 0.0, 1.0))
 			velocity.z = lerpf(velocity.z, drive.z, clampf(delta * 4.2, 0.0, 1.0))
 
@@ -121,7 +126,8 @@ func step_simulation(delta: float) -> void:
 
 	position += velocity * delta
 	position.x = clampf(position.x, -ARENA_HALF_EXTENT_X, ARENA_HALF_EXTENT_X)
-	position.z = clampf(position.z, -ARENA_HALF_EXTENT_Z, ARENA_HALF_EXTENT_Z)
+	var min_z_bound: float = (security_gate_z + 1.1) if security_gate_locked else ARENA_MIN_Z
+	position.z = clampf(position.z, min_z_bound, ARENA_MAX_Z)
 	position.y = 0.0
 
 	var horizontal_speed: float = Vector2(velocity.x, velocity.z).length()
@@ -195,12 +201,13 @@ func mark_extracted_authoritative(is_host: bool) -> void:
 		_transition_to(VipState.EXTRACTED)
 
 
-func reset_vip_authoritative(spawn_pos: Vector3, is_host: bool) -> void:
+func reset_vip_authoritative(spawn_pos: Vector3, is_host: bool, new_max_hp: float = MAX_HEALTH) -> void:
 	if not is_host:
 		return
 	position = spawn_pos if spawn_pos.is_finite() else Vector3.ZERO
 	velocity = Vector3.ZERO
-	health = MAX_HEALTH
+	max_health = maxf(50.0, new_max_hp)
+	health = max_health
 	suspicion = 0.0
 	grabber_count = 0
 	authoritative_voice_rms = 0.0
@@ -246,15 +253,15 @@ func _build_visual_rig() -> void:
 	_jaw_pivot.position = Vector3(0.0, -0.05, 0.06)
 	_head_pivot.add_child(_jaw_pivot)
 
-	# High-Specular Clearcoat Gold Sequined VIP Tuxedo Material ("БЛИКИ")
+	# Gleaming Luxury Gold Tuxedo Jacket (reflects twilight sky cleanly without turning dark!)
 	var suit_mat: StandardMaterial3D = StandardMaterial3D.new()
-	suit_mat.albedo_color = Color(1.0, 0.80, 0.20)
-	suit_mat.metallic = 0.92
-	suit_mat.metallic_specular = 1.0
-	suit_mat.roughness = 0.12
+	suit_mat.albedo_color = Color(0.98, 0.78, 0.22)
+	suit_mat.metallic = 0.52
+	suit_mat.metallic_specular = 0.85
+	suit_mat.roughness = 0.24
 	suit_mat.clearcoat_enabled = true
-	suit_mat.clearcoat = 1.0
-	suit_mat.clearcoat_roughness = 0.05
+	suit_mat.clearcoat = 0.45
+	suit_mat.clearcoat_roughness = 0.15
 
 	var pants_mat: StandardMaterial3D = StandardMaterial3D.new()
 	pants_mat.albedo_color = Color(0.08, 0.08, 0.11)

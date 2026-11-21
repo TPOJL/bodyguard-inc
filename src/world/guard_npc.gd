@@ -44,11 +44,17 @@ func trigger_bottle_distraction(bottle_pos: Vector3, radius: float = 7.5, durati
 	if not bottle_pos.is_finite():
 		return false
 	if position.distance_to(bottle_pos) <= radius:
-		distracted_timer = duration
+		distracted_timer = maxf(distracted_timer, duration)
 		distraction_target = bottle_pos
 		is_inspecting_vip = false
 		return true
 	return false
+
+
+func stun_with_taser(duration: float) -> void:
+	distracted_timer = maxf(distracted_timer, duration)
+	distraction_target = position
+	is_inspecting_vip = false
 
 
 func step_guard_physics(
@@ -133,17 +139,17 @@ func update_guard_visuals() -> void:
 
 	if _spotlight != null:
 		if paparazzi_flash_pulse > 0.1:
-			_spotlight.light_color = Color(1.0, 0.98, 0.90)
-			_spotlight.light_energy = 4.0 + paparazzi_flash_pulse * 14.0
+			_spotlight.light_color = Color(1.0, 0.96, 0.88)
+			_spotlight.light_energy = 2.0 + paparazzi_flash_pulse * 4.5
 		elif distracted_timer > 0.0:
-			_spotlight.light_color = Color(0.3, 0.95, 1.0)
-			_spotlight.light_energy = 3.2
+			_spotlight.light_color = Color(0.3, 0.90, 1.0)
+			_spotlight.light_energy = 1.6
 		elif is_inspecting_vip:
 			_spotlight.light_color = Color(1.0, 0.25, 0.20)
-			_spotlight.light_energy = 5.5
+			_spotlight.light_energy = 2.4
 		else:
-			_spotlight.light_color = Color(1.0, 0.90, 0.65)
-			_spotlight.light_energy = 3.4
+			_spotlight.light_color = Color(1.0, 0.90, 0.68)
+			_spotlight.light_energy = 1.6
 
 	if _overhead_label != null:
 		if distracted_timer > 0.0:

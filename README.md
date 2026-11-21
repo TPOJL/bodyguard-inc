@@ -68,18 +68,20 @@ make play
 ### 2. In-Game Controls
 | Key / Input | Action |
 | :--- | :--- |
-| **`W A S D` / `Arrow Keys`** | Move Bodyguard across the Penthouse Gala Ballroom |
-| **`Hold Shift`** | **Tactical Sprint** (burst speed with Stamina recovery to intercept hazards) |
-| **`Hold E` / `Hold Space`** | **Grab / Carry VIP** (pull VIP away from hazards, or prop up the limp corpse *"Weekend at Bernie's"* style with marionette walk) |
-| **`F`** | **Hero Dive-Tackle / Shove VIP** (knock VIP out of the Sniper Laser beam + screen shake + `+$500` bonus) |
-| **`Q`** | **Throw Decoy Champagne Bottle** (shatters on the marble floor, distracting Guards & Paparazzi within `8m` for `4.8s` + `+$500` bonus) |
-| **`Hold V`** | **Proximity Voice TALK Bluff (`~0.45 RMS`)** — animates the VIP corpse's 3D jaw & teeth (`~18.7°`), pops witty 3D speech bubbles, plays synth voice chatter, and **lowers Guard Suspicion (`-12/s`)**! |
+| **`W A S D` / `Arrow Keys`** | Move Bodyguard across the 4-Zone 104m Penthouse Gala Estate |
+| **`Hold Shift`** | **Tactical Sprint** (burst speed with Stamina recovery, upgradeable via *Kevlar Cardio*) |
+| **`Hold E` / `Hold Space`** | **Grab / Carry VIP** (steer VIP to Press Stage & Auction, or prop up the limp corpse *"Weekend at Bernie's"* style) |
+| **`F`** | **Hero Dive-Tackle** (KO nearby **Rival Assassins** for `+$800` bounty, or shove VIP clear of Sniper Lasers!) |
+| **`G`** | **Shock Taser Baton** (stuns nearby Assassins & Guards in a 5m radius; upgradeable in Armory `[U]`) |
+| **`Q`** | **Throw Decoy Champagne Bottle** (distracts Guards & Paparazzi within `8.5m` for `5.0s+` + `+$400` bonus) |
+| **`Hold V`** | **Proximity Voice TALK Bluff (`~0.45 RMS`)** — animates the VIP corpse's 3D jaw & teeth, passes Press/Auction speeches, and **drains Guard Suspicion**! |
 | **`Hold B`** | **Proximity Voice SCREAM (`~0.95 RMS`)** — opens corpse jaw wide (`42°`), causes panic (`+10/s` suspicion) |
+| **`U`** | **Open Agency Armory & Upgrade Shop** — spend farmed cash on **6 permanent upgrade trees (Lv 0 -> 5)** (`1..6` hotkeys or mouse click) |
 | **`C`** | **Cycle Camera Mode** (`Cinematic Follow` / `Close Action Over-Shoulder` / `Tactical Penthouse Overview`) |
 | **`K`** | **Instant Kill VIP** (test *"Weekend at Bernie's"* corpse dragging & jaw lip-sync at any moment) |
-| **`Tab`** | Toggle **AI Co-op Partner Bodyguard** (`ON / OFF`) to help grab the VIP's other arm |
+| **`Tab`** | Toggle **AI Co-op Partner Bodyguard** (`OFF` by default in Solo; toggle `ON` anytime for co-op assist) |
 | **`H` / `J`** | **Host** (`127.0.0.1:17777`) or **Join** a localhost ENet multiplayer co-op session |
-| **`R`** | **Restart Mission** |
+| **`R`** | **Restart Contract** |
 
 ### 3. Run the Full Autonomous Quality Gate
 ```bash

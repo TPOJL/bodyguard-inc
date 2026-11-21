@@ -21,6 +21,7 @@ var active_mode: TransportMode = TransportMode.ENET_LOCALHOST
 func host_session(port: int = 17777, max_clients: int = 3) -> Error:
 	if active_mode == TransportMode.ENET_LOCALHOST:
 		var peer: ENetMultiplayerPeer = ENetMultiplayerPeer.new()
+		peer.set_bind_ip("127.0.0.1")
 		var err: Error = peer.create_server(port, max_clients)
 		if err != OK:
 			return err

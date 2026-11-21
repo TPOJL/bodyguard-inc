@@ -6,18 +6,27 @@ extends Node3D
 const RagdollPhysicsLib := preload("res://src/core/ragdoll_physics.gd")
 
 const MOVE_SPEED: float = 6.6
-const SPRINT_SPEED: float = 9.6
-const CARRY_MOVE_SPEED: float = 5.2
+const SPRINT_SPEED: float = 9.4
+const CARRY_MOVE_SPEED: float = 4.6
 const GRAB_RANGE: float = 2.95
-const SHOVE_RANGE: float = 3.4
+const SHOVE_RANGE: float = 3.6
 const SHOVE_IMPULSE_MAG: float = 120.0
 const SHOVE_COOLDOWN_SEC: float = 0.55
-const ARENA_HALF_EXTENT_X: float = 13.5
-const ARENA_HALF_EXTENT_Z: float = 17.5
+const ARENA_HALF_EXTENT_X: float = 14.2
+const ARENA_MIN_Z: float = -52.5
+const ARENA_MAX_Z: float = 48.5
 
 var peer_id: int = 1
 var is_ai_partner: bool = false
-var ai_assist_enabled: bool = true
+var ai_assist_enabled: bool = false
+
+# Upgradeable stats (driven by AgencyProgression)
+var carry_speed_mult: float = 1.0
+var grab_range_bonus: float = 0.0
+var sprint_speed_mult: float = 1.0
+var stamina_regen_mult: float = 1.0
+var security_gate_locked: bool = false
+var security_gate_z: float = -14.0
 
 # Authoritative 60 Hz state
 var velocity: Vector3 = Vector3.ZERO
@@ -63,9 +72,9 @@ func step_bodyguard_physics(delta: float, vip: Node3D, extraction_goal: Vector3)
 		stamina = maxf(0.0, stamina - delta * 28.0)
 	else:
 		is_sprinting = false
-		stamina = minf(100.0, stamina + delta * 22.0)
+		stamina = minf(100.0, stamina + delta * (22.0 * stamina_regen_mult))
 
-	var max_spd: float = CARRY_MOVE_SPEED if is_grabbing_vip else (SPRINT_SPEED if is_sprinting else MOVE_SPEED)
+	var max_spd: float = (CARRY_MOVE_SPEED * carry_speed_mult) if is_grabbing_vip else ((SPRINT_SPEED * sprint_speed_mult) if is_sprinting else MOVE_SPEED)
 	var wish_vel: Vector3 = Vector3(_intent_move_dir.x, 0.0, _intent_move_dir.y) * max_spd
 	velocity = velocity.lerp(wish_vel, clampf(delta * 15.0, 0.0, 1.0))
 	if not velocity.is_finite():
@@ -73,14 +82,15 @@ func step_bodyguard_physics(delta: float, vip: Node3D, extraction_goal: Vector3)
 
 	position += velocity * delta
 	position.x = clampf(position.x, -ARENA_HALF_EXTENT_X, ARENA_HALF_EXTENT_X)
-	position.z = clampf(position.z, -ARENA_HALF_EXTENT_Z, ARENA_HALF_EXTENT_Z)
+	var min_z_bound: float = (security_gate_z + 1.0) if security_gate_locked else ARENA_MIN_Z
+	position.z = clampf(position.z, min_z_bound, ARENA_MAX_Z)
 	position.y = 0.0
 
 	if Vector2(velocity.x, velocity.z).length() > 0.15:
 		facing_yaw_rad = atan2(velocity.x, velocity.z)
 
 	var dist_to_vip: float = position.distance_to(vip.position)
-	is_grabbing_vip = _intent_grab and (dist_to_vip <= GRAB_RANGE)
+	is_grabbing_vip = _intent_grab and (dist_to_vip <= (GRAB_RANGE + grab_range_bonus))
 
 
 func try_shove_vip(vip: Node3D) -> Vector3:
@@ -205,6 +215,27 @@ func _build_visual_mesh() -> void:
 	head.position = Vector3(0.0, 1.74, 0.0)
 	head.material_override = skin_mat
 	_visual_root.add_child(head)
+
+	# Stylized Secret Service Hair Crown & Articulated Legs
+	var hair_mat: StandardMaterial3D = StandardMaterial3D.new()
+	hair_mat.albedo_color = Color(0.08, 0.07, 0.06) if not is_ai_partner else Color(0.22, 0.16, 0.12)
+	hair_mat.roughness = 0.55
+	var hair: MeshInstance3D = MeshInstance3D.new()
+	var hair_box: BoxMesh = BoxMesh.new()
+	hair_box.size = Vector3(0.43, 0.15, 0.44)
+	hair.mesh = hair_box
+	hair.position = Vector3(0.0, 1.94, -0.02)
+	hair.material_override = hair_mat
+	_visual_root.add_child(hair)
+
+	for leg_x: float in [-0.17, 0.17]:
+		var leg: MeshInstance3D = MeshInstance3D.new()
+		var lbox: BoxMesh = BoxMesh.new()
+		lbox.size = Vector3(0.20, 0.62, 0.22)
+		leg.mesh = lbox
+		leg.position = Vector3(leg_x, 0.31, 0.0)
+		leg.material_override = suit_mat
+		_visual_root.add_child(leg)
 
 	var shades: MeshInstance3D = MeshInstance3D.new()
 	var sb: BoxMesh = BoxMesh.new()
