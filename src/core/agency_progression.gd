@@ -1,6 +1,6 @@
 class_name AgencyProgression
 extends RefCounted
-## Persistent Agency Bank, Farming Economy, 6 Upgrade Trees (Lv 0..5) & Night Escalation.
+## Persistent Agency Bank, Weapon & Cryo Upgrades (8 Trees x 5 Levels) & Multi-Level Scaling.
 ## Deterministic in `--headless` test mode (skips disk I/O when headless).
 
 const SAVE_PATH: String = "user://bodyguard_inc_save.json"
@@ -8,55 +8,72 @@ const MAX_UPGRADE_LEVEL: int = 5
 
 const UPGRADE_CATALOG: Array[Dictionary] = [
 	{
+		"id": "plasma_gun",
+		"name": "Plasma Pistol [LMB / X]",
+		"desc": "+22 Damage & Faster Fire Rate to kill armored Guards/Assassins",
+		"base_cost": 900,
+		"cost_step": 850,
+	},
+	{
+		"id": "cryo_rifle",
+		"name": "Cryo-Freeze Rifle [RMB / Z]",
+		"desc": "+1.1s Freeze Duration & +0.25x Frozen Shatter Crit Damage",
+		"base_cost": 1100,
+		"cost_step": 950,
+	},
+	{
 		"id": "exo_grip",
-		"name": "Exo-Grip Servos",
-		"desc": "+12% Carry Speed & +0.35m Grab Reach per level",
-		"base_cost": 1200,
-		"cost_step": 900,
+		"name": "Exo-Grip Servos [E]",
+		"desc": "+12% Carry Speed & +0.35m VIP Grab Reach per level",
+		"base_cost": 1000,
+		"cost_step": 850,
 	},
 	{
 		"id": "cardio",
-		"name": "Kevlar Cardio",
-		"desc": "+12% Sprint Speed & +20% Stamina Regen per level",
-		"base_cost": 1000,
-		"cost_step": 800,
+		"name": "Kevlar Cardio [Shift]",
+		"desc": "+12% Sprint Speed & +22% Stamina Regen per level",
+		"base_cost": 950,
+		"cost_step": 750,
 	},
 	{
 		"id": "voice_mod",
-		"name": "Ventriloquist Modulator",
-		"desc": "+25% Voice Bluff [V] Drain & -12% Guard Suspicion Gain",
-		"base_cost": 1500,
-		"cost_step": 1100,
+		"name": "Ventriloquist Modulator [V]",
+		"desc": "+25% Corpse Voice Bluff Drain & -12% Suspicion Gain",
+		"base_cost": 1300,
+		"cost_step": 1000,
 	},
 	{
 		"id": "utility_belt",
-		"name": "Tactical Utility Belt",
-		"desc": "+1 Max Decoy Bottle [Q] & +1.2s Distraction Duration",
-		"base_cost": 1400,
-		"cost_step": 1000,
+		"name": "Tactical Utility Belt [Q]",
+		"desc": "+1 Max Decoy Bottle & +1.2s Guard Distraction",
+		"base_cost": 1200,
+		"cost_step": 950,
 	},
 	{
 		"id": "vip_kevlar",
 		"name": "VIP Kevlar Tuxedo",
-		"desc": "+35 VIP Max HP & -8% Suicidal Wander Speed",
-		"base_cost": 1800,
-		"cost_step": 1200,
+		"desc": "+40 VIP Max HP & -8% Suicidal Wander Speed",
+		"base_cost": 1400,
+		"cost_step": 1100,
 	},
 	{
 		"id": "stun_baton",
-		"name": "Shock Taser [G]",
-		"desc": "+1.2s Assassin/Guard Stun & Faster Taser Cooldown",
-		"base_cost": 1600,
-		"cost_step": 1150,
+		"name": "Shock Taser Overdrive [G]",
+		"desc": "+1.2s AOE Stun Duration & Faster Recharge",
+		"base_cost": 1350,
+		"cost_step": 1050,
 	},
 ]
 
-var bank_cash: int = 0
+var bank_cash: int = 1200
 var contract_night: int = 1
 var total_contracts_cleared: int = 0
 var total_corpse_extractions: int = 0
 var total_assassins_ko: int = 0
+var total_guards_eliminated: int = 0
 var upgrade_levels: Dictionary = {
+	"plasma_gun": 0,
+	"cryo_rifle": 0,
 	"exo_grip": 0,
 	"cardio": 0,
 	"voice_mod": 0,
@@ -101,7 +118,7 @@ func add_cash(amount: int) -> void:
 
 
 func record_contract_victory(was_corpse: bool) -> int:
-	var base_payout: int = 4500 + (contract_night - 1) * 1800
+	var base_payout: int = 4500 + (contract_night - 1) * 2000
 	var style_bonus: int = 3500 if was_corpse else 2500
 	var total_award: int = base_payout + style_bonus
 	bank_cash += total_award
@@ -125,6 +142,26 @@ func get_agency_rank() -> String:
 	return "ROOKIE INTERN"
 
 
+func get_plasma_damage() -> float:
+	return 38.0 + float(get_level("plasma_gun")) * 22.0
+
+
+func get_plasma_cooldown() -> float:
+	return maxf(0.12, 0.34 - float(get_level("plasma_gun")) * 0.04)
+
+
+func get_cryo_freeze_duration() -> float:
+	return 3.5 + float(get_level("cryo_rifle")) * 1.1
+
+
+func get_cryo_shatter_crit_mult() -> float:
+	return 2.0 + float(get_level("cryo_rifle")) * 0.25
+
+
+func get_cryo_cooldown() -> float:
+	return maxf(0.55, 1.35 - float(get_level("cryo_rifle")) * 0.14)
+
+
 func get_carry_speed_multiplier() -> float:
 	return 1.0 + float(get_level("exo_grip")) * 0.12
 
@@ -138,7 +175,7 @@ func get_sprint_speed_multiplier() -> float:
 
 
 func get_stamina_regen_multiplier() -> float:
-	return 1.0 + float(get_level("cardio")) * 0.20
+	return 1.0 + float(get_level("cardio")) * 0.22
 
 
 func get_voice_bluff_multiplier() -> float:
@@ -158,7 +195,7 @@ func get_decoy_duration_sec() -> float:
 
 
 func get_vip_max_hp() -> float:
-	return 100.0 + float(get_level("vip_kevlar")) * 35.0
+	return 100.0 + float(get_level("vip_kevlar")) * 40.0
 
 
 func get_vip_wander_multiplier() -> float:
@@ -182,6 +219,7 @@ func save_to_disk() -> void:
 		"total_contracts_cleared": total_contracts_cleared,
 		"total_corpse_extractions": total_corpse_extractions,
 		"total_assassins_ko": total_assassins_ko,
+		"total_guards_eliminated": total_guards_eliminated,
 		"upgrade_levels": upgrade_levels,
 	}
 	var f: FileAccess = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
@@ -204,11 +242,12 @@ func load_from_disk() -> void:
 	if typeof(parsed) != TYPE_DICTIONARY:
 		return
 	var data: Dictionary = parsed
-	bank_cash = int(data.get("bank_cash", 0))
+	bank_cash = int(data.get("bank_cash", 1200))
 	contract_night = maxi(1, int(data.get("contract_night", 1)))
 	total_contracts_cleared = int(data.get("total_contracts_cleared", 0))
 	total_corpse_extractions = int(data.get("total_corpse_extractions", 0))
 	total_assassins_ko = int(data.get("total_assassins_ko", 0))
+	total_guards_eliminated = int(data.get("total_guards_eliminated", 0))
 	var saved_ups: Variant = data.get("upgrade_levels", {})
 	if typeof(saved_ups) == TYPE_DICTIONARY:
 		var ups_dict: Dictionary = saved_ups

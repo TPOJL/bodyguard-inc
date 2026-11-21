@@ -21,6 +21,7 @@ ROOT_DIR = pathlib.Path(__file__).resolve().parent.parent.parent
 GODOT_TEST_SCRIPTS = [
     "res://tests/unit/test_vip_state_machine.gd",
     "res://tests/unit/test_full_gala_gameplay.gd",
+    "res://.agent/skills/wall-collision-bug-hunter/scripts/test_wall_collisions.gd",
     "res://.agent/skills/ragdoll-physics-tuner/scripts/test_ragdoll_stability.gd",
     "res://.agent/skills/voice-lipsync-mock/scripts/test_voice_lipsync.gd",
 ]

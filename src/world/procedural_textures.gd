@@ -22,9 +22,9 @@ static func make_marble_floor_material() -> StandardMaterial3D:
 	albedo_noise.fractal_type = FastNoiseLite.FRACTAL_RIDGED
 
 	var grad: Gradient = Gradient.new()
-	grad.set_color(0, Color(0.14, 0.16, 0.22))
-	grad.set_color(1, Color(0.32, 0.34, 0.40))
-	grad.add_point(0.72, Color(0.20, 0.22, 0.28))
+	grad.set_color(0, Color(0.24, 0.27, 0.35))
+	grad.set_color(1, Color(0.48, 0.52, 0.60))
+	grad.add_point(0.72, Color(0.32, 0.35, 0.44))
 
 	var albedo_tex: NoiseTexture2D = NoiseTexture2D.new()
 	albedo_tex.width = 256

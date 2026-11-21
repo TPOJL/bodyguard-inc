@@ -68,20 +68,22 @@ make play
 ### 2. In-Game Controls
 | Key / Input | Action |
 | :--- | :--- |
-| **`W A S D` / `Arrow Keys`** | Move Bodyguard across the 4-Zone 104m Penthouse Gala Estate |
+| **`W A S D` / `Arrow Keys`** | Move Bodyguard across the **52m × 136m** Multi-Level Estate (solid wall collision — zero clipping!) |
+| **`Left Click` / `X`** | **Fire Plasma Pistol** (upgradable damage to eliminate high-HP Guards & Assassins; **`2.0x–3.25x` Shatter Crit** on frozen enemies!) |
+| **`Right Click` / `Z`** | **Fire Cryo-Freeze Rifle** (encases Guards & Assassins in a **glowing 3D Ice Crystal Block** for `3.5s–9.0s`, halting patrol & suspicion!) |
 | **`Hold Shift`** | **Tactical Sprint** (burst speed with Stamina recovery, upgradeable via *Kevlar Cardio*) |
 | **`Hold E` / `Hold Space`** | **Grab / Carry VIP** (steer VIP to Press Stage & Auction, or prop up the limp corpse *"Weekend at Bernie's"* style) |
-| **`F`** | **Hero Dive-Tackle** (KO nearby **Rival Assassins** for `+$800` bounty, or shove VIP clear of Sniper Lasers!) |
-| **`G`** | **Shock Taser Baton** (stuns nearby Assassins & Guards in a 5m radius; upgradeable in Armory `[U]`) |
-| **`Q`** | **Throw Decoy Champagne Bottle** (distracts Guards & Paparazzi within `8.5m` for `5.0s+` + `+$400` bonus) |
+| **`F`** | **Hero Dive-Tackle** (KO nearby **Rival Assassins** for `+$850` bounty, or shove VIP clear of Sniper Lasers!) |
+| **`G`** | **Shock Taser Overdrive** (stuns nearby Assassins & Guards in a 5.5m radius; upgradeable at Big Tony's `[U]`) |
+| **`Q`** | **Throw Decoy Champagne Bottle** (distracts Guards & Paparazzi within `9.0m` for `5.0s+` + `+$400` bonus) |
 | **`Hold V`** | **Proximity Voice TALK Bluff (`~0.45 RMS`)** — animates the VIP corpse's 3D jaw & teeth, passes Press/Auction speeches, and **drains Guard Suspicion**! |
 | **`Hold B`** | **Proximity Voice SCREAM (`~0.95 RMS`)** — opens corpse jaw wide (`42°`), causes panic (`+10/s` suspicion) |
-| **`U`** | **Open Agency Armory & Upgrade Shop** — spend farmed cash on **6 permanent upgrade trees (Lv 0 -> 5)** (`1..6` hotkeys or mouse click) |
-| **`C`** | **Cycle Camera Mode** (`Cinematic Follow` / `Close Action Over-Shoulder` / `Tactical Penthouse Overview`) |
+| **`U`** | **Big Tony's Black-Market Armory** (walk up to Tony's booth in the Start Lobby or press `[U]` anytime — **8 permanent upgrade trees × 5 levels**, `1–8` hotkeys or mouse click) |
+| **`C`** | **Cycle Camera Mode** (`Cinematic Follow` / `Close Action Over-Shoulder` / `Tactical Overview`) |
 | **`K`** | **Instant Kill VIP** (test *"Weekend at Bernie's"* corpse dragging & jaw lip-sync at any moment) |
 | **`Tab`** | Toggle **AI Co-op Partner Bodyguard** (`OFF` by default in Solo; toggle `ON` anytime for co-op assist) |
 | **`H` / `J`** | **Host** (`127.0.0.1:17777`) or **Join** a localhost ENet multiplayer co-op session |
-| **`R`** | **Restart Contract** |
+| **`R`** | **Deploy / Restart Current Level** |
 
 ### 3. Run the Full Autonomous Quality Gate
 ```bash
@@ -115,6 +117,7 @@ This repository is engineered for zero-hand-holding autonomous development using
 ### Specialized Agent Skills (`.agent/skills/`)
 | Skill | Domain & Automated Verification |
 | :--- | :--- |
+| [`wall-collision-bug-hunter`](.agent/skills/wall-collision-bug-hunter/SKILL.md) | Automated anti-clipping detector driving Players, VIP, Guards, Assassins & Projectiles into every wall, column, vendor booth, table, and locked gate to guarantee zero walk-through bugs. |
 | [`ragdoll-physics-tuner`](.agent/skills/ragdoll-physics-tuner/SKILL.md) | Active ragdoll joint limits, critically damped grab spring-damper math, corpse mass profiles, and 300-tick extreme impulse stability test. |
 | [`multiplayer-netcode-guard`](.agent/skills/multiplayer-netcode-guard/SKILL.md) | Host-authoritative `@rpc` security rules, `< 8 KB/s` quantized ragdoll sync budget, Steam-to-ENet abstraction, and automated static RPC auditor. |
 | [`headless-coop-playtester`](.agent/skills/headless-coop-playtester/SKILL.md) | Simultaneous 1 Host + 2 Headless Clients localhost orchestrator injecting `move`, `grab`, `push`, and `voice_rms` bot intents with zero-tolerance log scanning. |

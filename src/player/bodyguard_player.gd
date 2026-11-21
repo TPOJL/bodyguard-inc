@@ -1,20 +1,19 @@
 class_name BodyguardPlayer
 extends Node3D
-## Playable Bodyguard & Co-op AI Partner Controller.
-## Supports Sprint [Shift], Spring Grab [E], Hero Dive-Tackle [F], and Decoy Bottle Throw [Q].
+## High-Detail Sculpted Secret Service Bodyguard & Co-op AI Partner Controller.
+## Resolves solid collisions against WallColliderGrid at 60 Hz (zero wall clipping!).
 
 const RagdollPhysicsLib := preload("res://src/core/ragdoll_physics.gd")
+const CharacterRigBuilderLib := preload("res://src/world/character_rig_builder.gd")
 
-const MOVE_SPEED: float = 6.6
-const SPRINT_SPEED: float = 9.4
-const CARRY_MOVE_SPEED: float = 4.6
-const GRAB_RANGE: float = 2.95
+const MOVE_SPEED: float = 6.9
+const SPRINT_SPEED: float = 9.8
+const CARRY_MOVE_SPEED: float = 4.9
+const GRAB_RANGE: float = 3.0
 const SHOVE_RANGE: float = 3.6
 const SHOVE_IMPULSE_MAG: float = 120.0
 const SHOVE_COOLDOWN_SEC: float = 0.55
-const ARENA_HALF_EXTENT_X: float = 14.2
-const ARENA_MIN_Z: float = -52.5
-const ARENA_MAX_Z: float = 48.5
+const BODY_RADIUS: float = 0.48
 
 var peer_id: int = 1
 var is_ai_partner: bool = false
@@ -26,11 +25,12 @@ var grab_range_bonus: float = 0.0
 var sprint_speed_mult: float = 1.0
 var stamina_regen_mult: float = 1.0
 var security_gate_locked: bool = false
-var security_gate_z: float = -14.0
+var security_gate_z: float = -22.0
+var wall_grid: RefCounted = null
 
 # Authoritative 60 Hz state
 var velocity: Vector3 = Vector3.ZERO
-var facing_yaw_rad: float = 0.0
+var facing_yaw_rad: float = PI
 var is_grabbing_vip: bool = false
 var is_sprinting: bool = false
 var stamina: float = 100.0
@@ -38,6 +38,8 @@ var current_voice_rms: float = 0.0
 var _shove_cooldown: float = 0.0
 var _intent_move_dir: Vector2 = Vector2.ZERO
 var _intent_grab: bool = false
+var _weapon_flash_timer: float = 0.0
+var _last_shot_cryo: bool = false
 
 # Visual nodes (_process only)
 var _visual_root: Node3D = null
@@ -45,6 +47,9 @@ var _tether_beam: MeshInstance3D = null
 var _voice_ring: MeshInstance3D = null
 var _left_arm: Node3D = null
 var _right_arm: Node3D = null
+var _left_leg: Node3D = null
+var _right_leg: Node3D = null
+var _weapon_glow_mat: StandardMaterial3D = null
 var _anim_clock: float = 0.0
 
 
@@ -59,20 +64,31 @@ func set_player_intent(move_dir: Vector2, grab_held: bool, voice_rms: float, spr
 	is_sprinting = sprint_held and (_intent_move_dir.length_squared() > 0.01)
 
 
+func notify_weapon_fired(is_cryo: bool) -> void:
+	_weapon_flash_timer = 0.22
+	_last_shot_cryo = is_cryo
+
+
+func get_aim_direction() -> Vector3:
+	return Vector3(sin(facing_yaw_rad), 0.0, cos(facing_yaw_rad)).normalized()
+
+
 func step_bodyguard_physics(delta: float, vip: Node3D, extraction_goal: Vector3) -> void:
 	if not is_finite(delta) or delta <= 0.0 or vip == null:
 		return
 	if _shove_cooldown > 0.0:
 		_shove_cooldown = maxf(0.0, _shove_cooldown - delta)
+	if _weapon_flash_timer > 0.0:
+		_weapon_flash_timer = maxf(0.0, _weapon_flash_timer - delta)
 
 	if is_ai_partner:
 		_compute_ai_partner_intent(vip, extraction_goal)
 
 	if is_sprinting and stamina > 2.0:
-		stamina = maxf(0.0, stamina - delta * 28.0)
+		stamina = maxf(0.0, stamina - delta * 26.0)
 	else:
 		is_sprinting = false
-		stamina = minf(100.0, stamina + delta * (22.0 * stamina_regen_mult))
+		stamina = minf(100.0, stamina + delta * (24.0 * stamina_regen_mult))
 
 	var max_spd: float = (CARRY_MOVE_SPEED * carry_speed_mult) if is_grabbing_vip else ((SPRINT_SPEED * sprint_speed_mult) if is_sprinting else MOVE_SPEED)
 	var wish_vel: Vector3 = Vector3(_intent_move_dir.x, 0.0, _intent_move_dir.y) * max_spd
@@ -80,11 +96,15 @@ func step_bodyguard_physics(delta: float, vip: Node3D, extraction_goal: Vector3)
 	if not velocity.is_finite():
 		velocity = Vector3.ZERO
 
-	position += velocity * delta
-	position.x = clampf(position.x, -ARENA_HALF_EXTENT_X, ARENA_HALF_EXTENT_X)
-	var min_z_bound: float = (security_gate_z + 1.0) if security_gate_locked else ARENA_MIN_Z
-	position.z = clampf(position.z, min_z_bound, ARENA_MAX_Z)
-	position.y = 0.0
+	var next_pos: Vector3 = position + velocity * delta
+	next_pos.y = 0.0
+	if wall_grid != null:
+		next_pos = wall_grid.call("resolve_position", next_pos, BODY_RADIUS, security_gate_locked)
+	else:
+		next_pos.x = clampf(next_pos.x, -24.0, 24.0)
+		var min_z_b: float = (security_gate_z + 1.0) if security_gate_locked else -70.0
+		next_pos.z = clampf(next_pos.z, min_z_b, 60.0)
+	position = next_pos
 
 	if Vector2(velocity.x, velocity.z).length() > 0.15:
 		facing_yaw_rad = atan2(velocity.x, velocity.z)
@@ -102,12 +122,12 @@ func try_shove_vip(vip: Node3D) -> Vector3:
 	if dist > SHOVE_RANGE:
 		return Vector3.ZERO
 	_shove_cooldown = SHOVE_COOLDOWN_SEC
-	var dir: Vector3 = diff.normalized() if dist > 0.05 else Vector3(sin(facing_yaw_rad), 0.0, cos(facing_yaw_rad))
+	var dir: Vector3 = diff.normalized() if dist > 0.05 else get_aim_direction()
 	return RagdollPhysicsLib.sanitize_vector3(dir * SHOVE_IMPULSE_MAG, SHOVE_IMPULSE_MAG)
 
 
 func get_grab_anchor_world_pos(slot_index: int) -> Vector3:
-	var side_offset: float = -0.65 if (slot_index % 2 == 0) else 0.65
+	var side_offset: float = -0.68 if (slot_index % 2 == 0) else 0.68
 	return position + Vector3(side_offset, 0.0, 0.35)
 
 
@@ -126,7 +146,7 @@ func _compute_ai_partner_intent(vip: Node3D, extraction_goal: Vector3) -> void:
 	if dist > 1.35:
 		var d: Vector3 = to_vip.normalized()
 		_intent_move_dir = Vector2(d.x, d.z)
-		_intent_grab = dist <= GRAB_RANGE
+		_intent_grab = dist <= (GRAB_RANGE + grab_range_bonus)
 	else:
 		_intent_grab = true
 		var to_goal: Vector3 = extraction_goal - vip.position
@@ -149,9 +169,22 @@ func update_visuals(vip_pos: Vector3) -> void:
 		if is_grabbing_vip:
 			_left_arm.rotation.x = deg_to_rad(-65.0)
 			_right_arm.rotation.x = deg_to_rad(-65.0)
+		elif _weapon_flash_timer > 0.0:
+			_right_arm.rotation.x = deg_to_rad(-88.0)
+			_left_arm.rotation.x = sin(_anim_clock * 9.0) * minf(spd * 0.2, 0.6)
 		else:
-			_left_arm.rotation.x = sin(_anim_clock * 9.0) * minf(spd * 0.22, 0.7)
-			_right_arm.rotation.x = -sin(_anim_clock * 9.0) * minf(spd * 0.22, 0.7)
+			_left_arm.rotation.x = sin(_anim_clock * 9.5) * minf(spd * 0.16, 0.65)
+			_right_arm.rotation.x = deg_to_rad(-32.0) - sin(_anim_clock * 9.5) * minf(spd * 0.10, 0.35)
+
+	if _left_leg != null and _right_leg != null:
+		_left_leg.rotation.x = -sin(_anim_clock * 9.5) * minf(spd * 0.18, 0.72)
+		_right_leg.rotation.x = sin(_anim_clock * 9.5) * minf(spd * 0.18, 0.72)
+
+	if _weapon_glow_mat != null:
+		var w_col: Color = Color(0.25, 0.94, 1.0) if _last_shot_cryo else Color(1.0, 0.72, 0.20)
+		_weapon_glow_mat.albedo_color = w_col
+		_weapon_glow_mat.emission = w_col
+		_weapon_glow_mat.emission_energy_multiplier = 2.4 if _weapon_flash_timer > 0.0 else 1.2
 
 	if _tether_beam != null:
 		_tether_beam.visible = is_grabbing_vip
@@ -165,7 +198,7 @@ func update_visuals(vip_pos: Vector3) -> void:
 
 	if _voice_ring != null:
 		_voice_ring.visible = current_voice_rms >= 0.08
-		var s: float = 1.0 + current_voice_rms * 2.4
+		var s: float = 1.0 + current_voice_rms * 2.2
 		_voice_ring.scale = Vector3(s, 1.0, s)
 
 
@@ -176,121 +209,37 @@ func _build_visual_mesh() -> void:
 	if DisplayServer.get_name() == "headless":
 		return
 
-	var suit_color: Color = Color(0.08, 0.11, 0.18) if not is_ai_partner else Color(0.10, 0.20, 0.16)
-	var suit_mat: StandardMaterial3D = StandardMaterial3D.new()
-	suit_mat.albedo_color = suit_color
-	suit_mat.metallic = 0.45
-	suit_mat.roughness = 0.22
-	suit_mat.clearcoat_enabled = true
+	var suit_c: Color = Color(0.11, 0.15, 0.24) if not is_ai_partner else Color(0.12, 0.24, 0.18)
+	var tie_c: Color = Color(0.22, 0.85, 1.0) if not is_ai_partner else Color(0.28, 0.95, 0.55)
+	var hair_c: Color = Color(0.09, 0.08, 0.07) if not is_ai_partner else Color(0.26, 0.18, 0.12)
 
-	# Tailored Suit Torso
-	var torso: MeshInstance3D = MeshInstance3D.new()
-	var tbox: BoxMesh = BoxMesh.new()
-	tbox.size = Vector3(0.64, 0.96, 0.36)
-	torso.mesh = tbox
-	torso.position = Vector3(0.0, 1.02, 0.0)
-	torso.material_override = suit_mat
-	_visual_root.add_child(torso)
+	var rig: Dictionary = CharacterRigBuilderLib.build_sculpted_bodyguard(_visual_root, suit_c, tie_c, hair_c)
+	_left_arm = rig["left_arm"]
+	_right_arm = rig["right_arm"]
+	_left_leg = rig["left_leg"]
+	_right_leg = rig["right_leg"]
+	_weapon_glow_mat = rig["weapon_glow_mat"]
 
-	# White Shirt & Crimson Secret Service Tie
-	var tie_mat: StandardMaterial3D = StandardMaterial3D.new()
-	tie_mat.albedo_color = Color(0.20, 0.78, 1.0) if not is_ai_partner else Color(0.25, 0.95, 0.55)
-	tie_mat.emission_enabled = true
-	tie_mat.emission = tie_mat.albedo_color * 0.5
-	var tie: MeshInstance3D = MeshInstance3D.new()
-	var tie_box: BoxMesh = BoxMesh.new()
-	tie_box.size = Vector3(0.11, 0.52, 0.38)
-	tie.mesh = tie_box
-	tie.position = Vector3(0.0, 1.08, 0.0)
-	tie.material_override = tie_mat
-	_visual_root.add_child(tie)
-
-	# Head & Wraparound Sunglasses
-	var skin_mat: StandardMaterial3D = StandardMaterial3D.new()
-	skin_mat.albedo_color = Color(0.92, 0.76, 0.64)
-	var head: MeshInstance3D = MeshInstance3D.new()
-	var hbox: BoxMesh = BoxMesh.new()
-	hbox.size = Vector3(0.40, 0.42, 0.40)
-	head.mesh = hbox
-	head.position = Vector3(0.0, 1.74, 0.0)
-	head.material_override = skin_mat
-	_visual_root.add_child(head)
-
-	# Stylized Secret Service Hair Crown & Articulated Legs
-	var hair_mat: StandardMaterial3D = StandardMaterial3D.new()
-	hair_mat.albedo_color = Color(0.08, 0.07, 0.06) if not is_ai_partner else Color(0.22, 0.16, 0.12)
-	hair_mat.roughness = 0.55
-	var hair: MeshInstance3D = MeshInstance3D.new()
-	var hair_box: BoxMesh = BoxMesh.new()
-	hair_box.size = Vector3(0.43, 0.15, 0.44)
-	hair.mesh = hair_box
-	hair.position = Vector3(0.0, 1.94, -0.02)
-	hair.material_override = hair_mat
-	_visual_root.add_child(hair)
-
-	for leg_x: float in [-0.17, 0.17]:
-		var leg: MeshInstance3D = MeshInstance3D.new()
-		var lbox: BoxMesh = BoxMesh.new()
-		lbox.size = Vector3(0.20, 0.62, 0.22)
-		leg.mesh = lbox
-		leg.position = Vector3(leg_x, 0.31, 0.0)
-		leg.material_override = suit_mat
-		_visual_root.add_child(leg)
-
-	var shades: MeshInstance3D = MeshInstance3D.new()
-	var sb: BoxMesh = BoxMesh.new()
-	sb.size = Vector3(0.44, 0.11, 0.14)
-	shades.mesh = sb
-	shades.position = Vector3(0.0, 1.76, 0.18)
-	var dark_mat: StandardMaterial3D = StandardMaterial3D.new()
-	dark_mat.albedo_color = Color(0.03, 0.04, 0.06)
-	dark_mat.metallic = 0.95
-	dark_mat.roughness = 0.05
-	shades.material_override = dark_mat
-	_visual_root.add_child(shades)
-
-	# Articulated Arms
-	_left_arm = _make_arm("LeftArm", Vector3(-0.42, 1.38, 0.0), suit_mat)
-	_right_arm = _make_arm("RightArm", Vector3(0.42, 1.38, 0.0), suit_mat)
-	_visual_root.add_child(_left_arm)
-	_visual_root.add_child(_right_arm)
-
-	# HDR Glowing Grab Spring Tether Beam
+	# Grab spring tether beam
 	_tether_beam = MeshInstance3D.new()
 	var beam_box: BoxMesh = BoxMesh.new()
-	beam_box.size = Vector3(0.09, 0.09, 1.0)
+	beam_box.size = Vector3(0.08, 0.08, 1.0)
 	_tether_beam.mesh = beam_box
-	var beam_mat: StandardMaterial3D = StandardMaterial3D.new()
-	beam_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	beam_mat.albedo_color = Color(0.25, 0.95, 1.0)
-	_tether_beam.material_override = beam_mat
+	_tether_beam.material_override = CharacterRigBuilderLib.make_material(
+		Color(0.25, 0.92, 1.0), 0.2, 0.2, 0.0, Color(0.25, 0.92, 1.0), 1.4
+	)
 	_tether_beam.visible = false
 	add_child(_tether_beam)
 
-	# Proximity Voice Equalizer Ring
+	# Proximity voice wave ring
 	_voice_ring = MeshInstance3D.new()
 	var ring_mesh: TorusMesh = TorusMesh.new()
 	ring_mesh.inner_radius = 0.58
-	ring_mesh.outer_radius = 0.70
+	ring_mesh.outer_radius = 0.68
 	_voice_ring.mesh = ring_mesh
 	_voice_ring.position = Vector3(0.0, 0.12, 0.0)
-	var ring_mat: StandardMaterial3D = StandardMaterial3D.new()
-	ring_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	ring_mat.albedo_color = Color(0.25, 1.0, 0.58)
-	_voice_ring.material_override = ring_mat
+	_voice_ring.material_override = CharacterRigBuilderLib.make_material(
+		Color(0.25, 1.0, 0.58), 0.2, 0.2, 0.0, Color(0.25, 1.0, 0.58), 1.3
+	)
 	_voice_ring.visible = false
 	add_child(_voice_ring)
-
-
-func _make_arm(arm_name: String, offset: Vector3, mat: StandardMaterial3D) -> Node3D:
-	var pivot: Node3D = Node3D.new()
-	pivot.name = arm_name
-	pivot.position = offset
-	var mesh_inst: MeshInstance3D = MeshInstance3D.new()
-	var abox: BoxMesh = BoxMesh.new()
-	abox.size = Vector3(0.18, 0.72, 0.18)
-	mesh_inst.mesh = abox
-	mesh_inst.position = Vector3(0.0, -0.30, 0.0)
-	mesh_inst.material_override = mat
-	pivot.add_child(mesh_inst)
-	return pivot

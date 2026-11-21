@@ -60,6 +60,7 @@ Run `make verify-all` before declaring any milestone complete.
 
 ## 5. Available Antigravity / Gemini Skills (`.agent/skills/`)
 Consult the relevant skill before modifying its domain:
+- `wall-collision-bug-hunter` — Solid wall, column, furniture, locked gate, and projectile anti-clipping collision auditor.
 - `ragdoll-physics-tuner` — Active ragdoll joint limits, grab spring-damper math, corpse tuning, 300-tick stability test.
 - `multiplayer-netcode-guard` — Host-authoritative RPC patterns, ragdoll bandwidth budgeting, static security audit.
 - `headless-coop-playtester` — 1 Host + 2 Clients localhost ENet orchestrator and log failure detector.
