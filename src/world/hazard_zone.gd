@@ -1,6 +1,6 @@
 class_name HazardZone
 extends Node3D
-## Lethal Gala Hazards that the suicidal low-IQ VIP is drawn toward.
+## Lethal Gala Hazards with HDR Emissive Glare, OmniLights & 3D Warning Billboards.
 ## Types: SNIPER_LASER, POISON_FOUNTAIN, BALCONY_LEDGE.
 
 enum HazardType {
@@ -19,6 +19,8 @@ var sniper_lock_timer: float = 0.0
 var _sweep_clock: float = 0.0
 var _laser_beam_mesh: MeshInstance3D = null
 var _zone_mat: StandardMaterial3D = null
+var _hazard_light: OmniLight3D = null
+var _label_3d: Label3D = null
 
 
 func configure_hazard(h_type: HazardType, title: String, pos: Vector3, zone_radius: float) -> void:
@@ -37,10 +39,9 @@ func step_hazard_physics(delta: float, vip_pos: Vector3, vip_is_alive: bool) -> 
 
 	_sweep_clock += delta
 	if hazard_type == HazardType.SNIPER_LASER:
-		# Sniper laser dot sweeps gently across the red carpet unless locked onto VIP
 		var dist_sniper: float = position.distance_to(vip_pos)
 		if dist_sniper > radius:
-			position.x = sin(_sweep_clock * 1.1) * 5.5
+			position.x = sin(_sweep_clock * 1.15) * 5.8
 			sniper_lock_timer = maxf(0.0, sniper_lock_timer - delta * 1.5)
 			return 0.0
 		sniper_lock_timer += delta
@@ -58,9 +59,20 @@ func step_hazard_physics(delta: float, vip_pos: Vector3, vip_is_alive: bool) -> 
 
 
 func update_hazard_visuals() -> void:
-	if hazard_type == HazardType.SNIPER_LASER and _zone_mat != null:
+	if _zone_mat == null:
+		return
+	if hazard_type == HazardType.SNIPER_LASER:
 		var pulse: float = clampf(sniper_lock_timer / SNIPER_LOCK_THRESHOLD_SEC, 0.0, 1.0)
-		_zone_mat.albedo_color = Color(1.0, 0.08, 0.08).lerp(Color(1.0, 0.95, 0.2), pulse)
+		_zone_mat.albedo_color = Color(1.0, 0.08, 0.12).lerp(Color(1.0, 0.96, 0.25), pulse)
+		if _hazard_light != null:
+			_hazard_light.light_energy = 3.5 + pulse * 8.0
+		if _label_3d != null:
+			if sniper_lock_timer > 0.05:
+				_label_3d.text = "🎯 SNIPER LOCKED: %.1fs — SHOVE VIP [F]!" % maxf(0.0, SNIPER_LOCK_THRESHOLD_SEC - sniper_lock_timer)
+				_label_3d.modulate = Color(1.0, 0.95, 0.2)
+			else:
+				_label_3d.text = "🎯 ROOFTOP SNIPER LASER"
+				_label_3d.modulate = Color(1.0, 0.28, 0.28)
 
 
 func _build_hazard_visuals() -> void:
@@ -73,51 +85,90 @@ func _build_hazard_visuals() -> void:
 	_zone_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 
 	var ring: MeshInstance3D = MeshInstance3D.new()
-	var cyl: CylinderMesh = CylinderMesh.new()
-	cyl.top_radius = radius
-	cyl.bottom_radius = radius
-	cyl.height = 0.08
-	ring.mesh = cyl
-	ring.position = Vector3(0.0, 0.04, 0.0)
+	var torus: TorusMesh = TorusMesh.new()
+	torus.inner_radius = radius - 0.14
+	torus.outer_radius = radius
+	ring.mesh = torus
+	ring.position = Vector3(0.0, 0.05, 0.0)
 	ring.material_override = _zone_mat
 	add_child(ring)
 
+	_hazard_light = OmniLight3D.new()
+	_hazard_light.position = Vector3(0.0, 1.4, 0.0)
+	_hazard_light.omni_range = 7.5
+	_hazard_light.light_specular = 2.4
+	add_child(_hazard_light)
+
+	_label_3d = Label3D.new()
+	_label_3d.position = Vector3(0.0, 2.55, 0.0)
+	_label_3d.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	_label_3d.font_size = 24
+	_label_3d.outline_size = 8
+	add_child(_label_3d)
+
 	match hazard_type:
 		HazardType.POISON_FOUNTAIN:
-			_zone_mat.albedo_color = Color(0.22, 0.92, 0.25)
-			var tower: MeshInstance3D = MeshInstance3D.new()
-			var tcyl: CylinderMesh = CylinderMesh.new()
-			tcyl.top_radius = 0.45
-			tcyl.bottom_radius = 0.95
-			tcyl.height = 1.8
-			tower.mesh = tcyl
-			tower.position = Vector3(0.0, 0.9, 0.0)
+			_zone_mat.albedo_color = Color(0.20, 1.0, 0.35)
+			_hazard_light.light_color = Color(0.18, 1.0, 0.38)
+			_hazard_light.light_energy = 4.2
+			_label_3d.text = "☠️ POISON CHAMPAGNE FOUNTAIN"
+			_label_3d.modulate = Color(0.3, 1.0, 0.45)
+
 			var fmat: StandardMaterial3D = StandardMaterial3D.new()
-			fmat.albedo_color = Color(0.15, 0.85, 0.35)
+			fmat.albedo_color = Color(0.15, 0.95, 0.38)
+			fmat.metallic = 0.75
+			fmat.roughness = 0.08
 			fmat.emission_enabled = true
-			fmat.emission = Color(0.1, 0.65, 0.2)
-			tower.material_override = fmat
-			add_child(tower)
+			fmat.emission = Color(0.12, 0.88, 0.32)
+			fmat.emission_energy_multiplier = 3.2
+
+			for tier: int in range(3):
+				var bowl: MeshInstance3D = MeshInstance3D.new()
+				var tcyl: CylinderMesh = CylinderMesh.new()
+				var r: float = 1.15 - float(tier) * 0.30
+				tcyl.top_radius = r
+				tcyl.bottom_radius = r * 0.65
+				tcyl.height = 0.38
+				bowl.mesh = tcyl
+				bowl.position = Vector3(0.0, 0.45 + float(tier) * 0.58, 0.0)
+				bowl.material_override = fmat
+				add_child(bowl)
 
 		HazardType.BALCONY_LEDGE:
-			_zone_mat.albedo_color = Color(0.95, 0.35, 0.10)
+			_zone_mat.albedo_color = Color(1.0, 0.42, 0.10)
+			_hazard_light.light_color = Color(1.0, 0.45, 0.12)
+			_hazard_light.light_energy = 3.8
+			_label_3d.text = "⚡ HIGH-VOLTAGE BALCONY LEDGE"
+			_label_3d.modulate = Color(1.0, 0.55, 0.2)
+
+			var emat: StandardMaterial3D = StandardMaterial3D.new()
+			emat.albedo_color = Color(1.0, 0.50, 0.12)
+			emat.emission_enabled = true
+			emat.emission = Color(1.0, 0.42, 0.10)
+			emat.emission_energy_multiplier = 3.5
+
 			var rail: MeshInstance3D = MeshInstance3D.new()
 			var rbox: BoxMesh = BoxMesh.new()
-			rbox.size = Vector3(radius * 2.0, 0.45, 0.25)
+			rbox.size = Vector3(radius * 2.0, 0.52, 0.22)
 			rail.mesh = rbox
-			rail.position = Vector3(0.0, 0.25, 0.0)
-			rail.material_override = _zone_mat
+			rail.position = Vector3(0.0, 0.42, 0.0)
+			rail.material_override = emat
 			add_child(rail)
 
 		HazardType.SNIPER_LASER:
-			_zone_mat.albedo_color = Color(1.0, 0.10, 0.10)
+			_zone_mat.albedo_color = Color(1.0, 0.10, 0.15)
+			_hazard_light.light_color = Color(1.0, 0.12, 0.16)
+			_hazard_light.light_energy = 4.0
+			_label_3d.text = "🎯 ROOFTOP SNIPER LASER"
+			_label_3d.modulate = Color(1.0, 0.28, 0.28)
+
 			_laser_beam_mesh = MeshInstance3D.new()
 			var lcyl: CylinderMesh = CylinderMesh.new()
-			lcyl.top_radius = 0.05
-			lcyl.bottom_radius = 0.05
-			lcyl.height = 14.0
+			lcyl.top_radius = 0.045
+			lcyl.bottom_radius = 0.045
+			lcyl.height = 15.0
 			_laser_beam_mesh.mesh = lcyl
-			_laser_beam_mesh.position = Vector3(0.0, 7.0, -3.5)
+			_laser_beam_mesh.position = Vector3(0.0, 7.2, -3.6)
 			_laser_beam_mesh.rotation.x = deg_to_rad(28.0)
 			_laser_beam_mesh.material_override = _zone_mat
 			add_child(_laser_beam_mesh)

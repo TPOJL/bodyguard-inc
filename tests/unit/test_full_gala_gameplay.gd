@@ -80,11 +80,19 @@ func _process(_delta: float) -> bool:
 	_assert_true(level.vip.visual_jaw_angle_deg > 12.0, "Corpse jaw animates open during proximity voice talk bluff")
 	_assert_true(level.vip.suspicion < susp_before_bluff, "Guard suspicion drops when propped corpse talks convincingly")
 
-	# 5. Drag corpse to North Limousine Extraction Zone -> Victory & $10,000 Quota
+	# 4b. Test Decoy Champagne Bottle throw [Q] distracting nearby guards
+	var bottles_before: int = level.decoy_bottles_left
+	level.local_player.position = level.guards[0].position - Vector3(0.0, 0.0, 4.0)
+	level.local_player.facing_yaw_rad = 0.0
+	level._try_throw_decoy_bottle()
+	_assert_true(level.decoy_bottles_left == bottles_before - 1, "Throwing decoy bottle decrements inventory")
+	_assert_true(level.guards[0].distracted_timer > 0.0, "Nearby guard is distracted by shattered champagne bottle")
+
+	# 5. Drag corpse to North Limousine Extraction Zone -> Victory & >= $10,000 Quota
 	level.vip.position = GalaLevel.EXTRACTION_POS + Vector3(0.0, 0.0, 0.5)
 	level._evaluate_checkpoints_and_extraction()
 	_assert_true(level.vip.state == VipStateMachine.VipState.EXTRACTED, "VIP reaches EXTRACTED state at limousine pad")
-	_assert_true(level.quota_cash == GalaLevel.TARGET_QUOTA_CASH, "Full $10,000 quota cash awarded on extraction")
+	_assert_true(level.quota_cash >= GalaLevel.TARGET_QUOTA_CASH, "At least $10,000 quota cash awarded on extraction")
 
 	level.free()
 	var leaked: int = maxi(0, int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT)) - baseline_orphans)

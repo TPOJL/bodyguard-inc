@@ -69,10 +69,13 @@ make play
 | Key / Input | Action |
 | :--- | :--- |
 | **`W A S D` / `Arrow Keys`** | Move Bodyguard across the Penthouse Gala Ballroom |
-| **`Hold E` / `Hold Space`** | **Grab / Carry VIP** (pull VIP away from hazards, or prop up the limp corpse *"Weekend at Bernie's"* style) |
-| **`F`** | **Tackle / Shove VIP** (apply safe clamped impulse to knock VIP out of the Sniper Laser beam) |
-| **`Hold V`** | **Proximity Voice TALK Bluff (`~0.45 RMS`)** — animates the VIP corpse's jaw in real time (`~18°`) and **lowers Guard Suspicion (`-12/s`)** during inspection! |
+| **`Hold Shift`** | **Tactical Sprint** (burst speed with Stamina recovery to intercept hazards) |
+| **`Hold E` / `Hold Space`** | **Grab / Carry VIP** (pull VIP away from hazards, or prop up the limp corpse *"Weekend at Bernie's"* style with marionette walk) |
+| **`F`** | **Hero Dive-Tackle / Shove VIP** (knock VIP out of the Sniper Laser beam + screen shake + `+$500` bonus) |
+| **`Q`** | **Throw Decoy Champagne Bottle** (shatters on the marble floor, distracting Guards & Paparazzi within `8m` for `4.8s` + `+$500` bonus) |
+| **`Hold V`** | **Proximity Voice TALK Bluff (`~0.45 RMS`)** — animates the VIP corpse's 3D jaw & teeth (`~18.7°`), pops witty 3D speech bubbles, plays synth voice chatter, and **lowers Guard Suspicion (`-12/s`)**! |
 | **`Hold B`** | **Proximity Voice SCREAM (`~0.95 RMS`)** — opens corpse jaw wide (`42°`), causes panic (`+10/s` suspicion) |
+| **`C`** | **Cycle Camera Mode** (`Cinematic Follow` / `Close Action Over-Shoulder` / `Tactical Penthouse Overview`) |
 | **`K`** | **Instant Kill VIP** (test *"Weekend at Bernie's"* corpse dragging & jaw lip-sync at any moment) |
 | **`Tab`** | Toggle **AI Co-op Partner Bodyguard** (`ON / OFF`) to help grab the VIP's other arm |
 | **`H` / `J`** | **Host** (`127.0.0.1:17777`) or **Join** a localhost ENet multiplayer co-op session |
