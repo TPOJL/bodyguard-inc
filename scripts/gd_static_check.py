@@ -113,6 +113,22 @@ def check_strict_typing_and_safety(path: pathlib.Path) -> list[str]:
     return errors
 
 
+def find_gdlint() -> str | None:
+    direct = shutil.which("gdlint")
+    if direct:
+        return direct
+    home = pathlib.Path.home()
+    candidates = [home / ".local" / "bin" / "gdlint"]
+    py_lib = home / "Library" / "Python"
+    if py_lib.exists():
+        for py_ver in sorted(py_lib.iterdir(), reverse=True):
+            candidates.append(py_ver / "bin" / "gdlint")
+    for c in candidates:
+        if c.is_file():
+            return str(c)
+    return None
+
+
 def main() -> int:
     files = discover_gd_files(sys.argv[1:])
     if not files:
@@ -127,9 +143,9 @@ def main() -> int:
         all_errors.extend(check_strict_typing_and_safety(f))
 
     # 2. gdlint if available
-    gdlint_bin = shutil.which("gdlint")
+    gdlint_bin = find_gdlint()
     if gdlint_bin:
-        res = subprocess.run([gdlint_bin, *[str(f) for f in files]], capture_output=True, text=True)
+        res = subprocess.run([gdlint_bin, *[str(f) for f in files]], cwd=str(ROOT_DIR), capture_output=True, text=True)
         if res.returncode != 0:
             all_errors.append(f"gdlint failed:\n{res.stdout}{res.stderr}")
     else:

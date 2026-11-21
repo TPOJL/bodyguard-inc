@@ -6,7 +6,7 @@ config_version=5
 [application]
 
 config/name="BODYGUARD INC."
-config/description="2–4 player co-op physics chaos game: escort a suicidal low-IQ AI VIP through chaotic events—and if they die unnoticed, drag the ragdoll corpse Weekend at Bernie's style and talk into proximity voice chat to animate their jaw."
+config/description="2–4 player co-op physics chaos & stealth-action game in Godot 4.3+: escort a suicidal low-IQ VIP across 5 themed 52m x 136m luxury venues, battle armored guards & assassins with upgradable Plasma & Cryo-Freeze weapons from Big Tony's Armory, or drag the VIP corpse Weekend at Bernie's style with proximity voice jaw lip-sync."
 run/main_scene="res://src/scenes/gala_level.tscn"
 config/features=PackedStringArray("4.3", "Forward Plus")
 
