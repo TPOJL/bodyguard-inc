@@ -1,0 +1,12 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/core/network_transport.gd" id="1_net"]
+[ext_resource type="Script" path="res://src/vip/vip_state_machine.gd" id="2_vip"]
+
+[node name="DummyBootstrap" type="Node3D"]
+
+[node name="NetworkTransport" type="Node" parent="."]
+script = ExtResource("1_net")
+
+[node name="VIP" type="Node3D" parent="."]
+script = ExtResource("2_vip")

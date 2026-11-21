@@ -1,0 +1,73 @@
+# ==============================================================================
+# BODYGUARD INC. — Hardened .gitignore (Anti-Secret-Leak & Anti-Junk Shield)
+# ==============================================================================
+
+# --- Secrets, API Keys & Credentials (NEVER COMMIT) ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.crt
+*.csr
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+*secret*
+!*secret_guard.py
+!SECURITY.md
+*credentials*.json
+*service-account*.json
+*.token
+secrets/
+private/
+
+# --- Godot 4 Engine, Exports & Sensitive Presets ---
+.godot/
+*.translation
+*.import
+export_presets.cfg
+override.cfg
+steam_appid.txt
+builds/
+exports/
+dist/
+.mono/
+data_*/
+mono_crash.*.json
+
+# --- Logs, Test Artifacts & Temp Files ---
+logs/
+*.log
+*.tmp
+*.temp
+*.bak
+*.orig
+*.swp
+*.swo
+*~
+.pytest_cache/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.coverage
+
+# --- OS & IDE Junk ---
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.iml

@@ -1,0 +1,39 @@
+name: BODYGUARD INC. CI Quality Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify-all:
+    name: Security, Static Check, Unit, Co-op Smoke & Profiler
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install gdtoolkit (gdlint)
+        run: python3 -m pip install --quiet gdtoolkit
+
+      - name: Install Godot 4.3 (Headless Linux)
+        run: |
+          GODOT_VER="4.3-stable"
+          curl -fsSL "https://github.com/godotengine/godot/releases/download/${GODOT_VER}/Godot_v${GODOT_VER}_linux.x86_64.zip" -o godot.zip
+          unzip -q godot.zip
+          chmod +x "Godot_v${GODOT_VER}_linux.x86_64"
+          sudo mv "Godot_v${GODOT_VER}_linux.x86_64" /usr/local/bin/godot
+          rm -f godot.zip
+          godot --version
+
+      - name: Run full autonomous verification gate
+        run: make verify-all

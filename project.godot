@@ -1,0 +1,27 @@
+; Engine configuration file.
+; BODYGUARD INC. — 2-4 Player Co-op Physics Chaos Game (Godot 4.3+)
+
+config_version=5
+
+[application]
+
+config/name="BODYGUARD INC."
+config/description="2–4 player co-op physics chaos game: escort a suicidal low-IQ AI VIP through chaotic events—and if they die unnoticed, drag the ragdoll corpse Weekend at Bernie's style and talk into proximity voice chat to animate their jaw."
+run/main_scene="res://src/scenes/dummy_bootstrap.tscn"
+config/features=PackedStringArray("4.3", "Forward Plus")
+
+[debug]
+
+gdscript/warnings/untyped_declaration=2
+gdscript/warnings/inferred_declaration=1
+gdscript/warnings/unsafe_property_access=1
+gdscript/warnings/unsafe_method_access=1
+gdscript/warnings/unsafe_cast=1
+gdscript/warnings/return_value_discarded=1
+
+[physics]
+
+common/physics_ticks_per_second=60
+common/max_physics_steps_per_frame=8
+common/physics_interpolation=true
+3d/physics_engine="DEFAULT"
