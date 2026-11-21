@@ -10,6 +10,7 @@ fi
 for candidate in \
     "$(command -v godot 2>/dev/null || true)" \
     "$(command -v godot4 2>/dev/null || true)" \
+    "${HOME}/Applications/Godot.app/Contents/MacOS/Godot" \
     "/Applications/Godot.app/Contents/MacOS/Godot" \
     "/Applications/Godot_mono.app/Contents/MacOS/Godot" \
     "/opt/homebrew/bin/godot" \

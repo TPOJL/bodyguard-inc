@@ -11,9 +11,16 @@ const MAX_JOINT_SEPARATION: float = 2.5
 const MAX_WORLD_BOUND: float = 500.0
 
 
-func _init() -> void:
+var _ran: bool = false
+
+
+func _process(_delta: float) -> bool:
+	if _ran:
+		return true
+	_ran = true
 	var exit_code: int = _run_stability_suite()
 	quit(exit_code)
+	return true
 
 
 func _run_stability_suite() -> int:

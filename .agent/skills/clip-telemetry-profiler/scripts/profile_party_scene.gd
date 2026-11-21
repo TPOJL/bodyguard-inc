@@ -11,9 +11,16 @@ const P95_BUDGET_MS: float = 12.0
 const P99_BUDGET_MS: float = 16.67
 
 
-func _init() -> void:
+var _ran: bool = false
+
+
+func _process(_delta: float) -> bool:
+	if _ran:
+		return true
+	_ran = true
 	var exit_code: int = _run_benchmark()
 	quit(exit_code)
+	return true
 
 
 func _run_benchmark() -> int:

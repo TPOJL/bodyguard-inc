@@ -57,22 +57,31 @@ flowchart LR
 
 ---
 
-## Quickstart
+## Quickstart & How to Play
 
-### 1. Check Environment & Configure Git Hooks
+### 1. Launch the Game (`The Penthouse Gala`)
 ```bash
-./scripts/setup_env.sh
+make play
 ```
-To install **Godot 4.3+** (via Homebrew on macOS) and **`gdtoolkit` (`gdlint`)** automatically:
-```bash
-./scripts/setup_env.sh --install
-```
+*(If Godot 4.3+ is not yet installed, run `./scripts/setup_env.sh --install` first).*
 
-### 2. Run the Full Autonomous Quality Gate
+### 2. In-Game Controls
+| Key / Input | Action |
+| :--- | :--- |
+| **`W A S D` / `Arrow Keys`** | Move Bodyguard across the Penthouse Gala Ballroom |
+| **`Hold E` / `Hold Space`** | **Grab / Carry VIP** (pull VIP away from hazards, or prop up the limp corpse *"Weekend at Bernie's"* style) |
+| **`F`** | **Tackle / Shove VIP** (apply safe clamped impulse to knock VIP out of the Sniper Laser beam) |
+| **`Hold V`** | **Proximity Voice TALK Bluff (`~0.45 RMS`)** — animates the VIP corpse's jaw in real time (`~18°`) and **lowers Guard Suspicion (`-12/s`)** during inspection! |
+| **`Hold B`** | **Proximity Voice SCREAM (`~0.95 RMS`)** — opens corpse jaw wide (`42°`), causes panic (`+10/s` suspicion) |
+| **`K`** | **Instant Kill VIP** (test *"Weekend at Bernie's"* corpse dragging & jaw lip-sync at any moment) |
+| **`Tab`** | Toggle **AI Co-op Partner Bodyguard** (`ON / OFF`) to help grab the VIP's other arm |
+| **`H` / `J`** | **Host** (`127.0.0.1:17777`) or **Join** a localhost ENet multiplayer co-op session |
+| **`R`** | **Restart Mission** |
+
+### 3. Run the Full Autonomous Quality Gate
 ```bash
 make verify-all
 ```
-> **Headless-first design:** Every command works out of the box with live headless Godot 4.3+ AND cleanly degrades with explicit warnings to Python invariant/IPC fallbacks if Godot is not yet installed on a CI runner.
 
 ---
 
@@ -80,11 +89,12 @@ make verify-all
 
 | Command | Purpose |
 | :--- | :--- |
+| `make play` | Launch **BODYGUARD INC.** 3D playable game window (`res://src/scenes/gala_level.tscn`) |
 | `make setup-env` | Check environment, configure `.githooks`, and print/run installer steps |
 | `make security` | Run `secret_guard.py` across the entire repo (API keys, tokens, junk, >10 MB bloat) |
-| `make check` | Security guard + strict GDScript static type-check + `multiplayer-netcode-guard` audit |
-| `make test-unit` | VIP state machine unit tests + 300-tick ragdoll stability + `MockAudioInput` voice lip-sync |
-| `make test-mp` | Headless **1 Host + 2 Clients** localhost co-op smoke test with scripted bot inputs |
+| `make check` | Security guard + strict GDScript static type-check (`godot --check-only`) + `multiplayer-netcode-guard` audit |
+| `make test-unit` | VIP state machine + full Gala E2E gameplay loop + 300-tick ragdoll stability + `MockAudioInput` voice lip-sync |
+| `make test-mp` | Headless **1 Host + 2 Clients** localhost Godot 4.3 co-op smoke test with scripted bot inputs |
 | `make test-perf` | 1,000-tick headless party benchmark (VIP + 4 players + 10 NPCs + sniper laser) + `orphan_nodes == 0` |
 | `make verify-all` | Execute the complete 4-stage autonomous verification pipeline |
 
@@ -157,12 +167,14 @@ bodyguard-inc/
 │   ├── find_godot.sh               # Cross-platform Godot 4 binary locator
 │   └── setup_env.sh                # Environment setup & dependency installer
 ├── src/
-│   ├── core/                       # P2P NetworkTransport & AudioInputDriver
-│   ├── vip/                        # Authoritative VIP state machine
-│   └── scenes/                     # Bootstrap scene
+│   ├── core/                       # NetworkTransport, AudioInputDriver, RagdollPhysics (22B snapshots)
+│   ├── vip/                        # Authoritative VIP AI, Active Ragdoll & Articulated Jaw Rig
+│   ├── player/                     # Playable Bodyguard & AI Co-op Partner Controller
+│   ├── world/                      # Patrolling Guards/Paparazzi & Gala Hazards (Sniper, Fountain, Balcony)
+│   └── scenes/                     # Playable 3D GalaLevel (gala_level.tscn) + HUD
 └── tests/
-    ├── unit/                       # Headless unit & physics stability runner
-    └── mp/                         # Headless Host + 2 Clients ENet test harness
+    ├── unit/                       # Headless unit, full Gala gameplay E2E & physics stability runner
+    └── mp/                         # Headless Host + 2 Clients Godot 4.3 co-op test harness
 ```
 
 ---
@@ -170,9 +182,9 @@ bodyguard-inc/
 ## Development Roadmap
 
 - [x] **Phase 0 — Autonomous Agent Infrastructure:** Constitution, 5 domain skills, lifecycle hooks, anti-leak security shield, CI pipeline, and bootstrap test harnesses.
-- [ ] **Phase 1 — Core Gameplay MVP:** Active ragdoll VIP, 2–4 player grab/carry spring-dampers, alive-to-corpse transition, and basic party graybox arena.
-- [ ] **Phase 2 — "Weekend at Bernie's" Stealth & Voice:** Proximity voice capture -> corpse jaw lip-sync, guard suspicion AI, paparazzi flashes, and sniper laser hazards.
-- [ ] **Phase 3 — Steam P2P & Co-op Polish:** `SteamMultiplayerPeer` lobby integration, quota/economy loop, multiple gala venues, and chaos modifiers.
+- [x] **Phase 1 — Core Gameplay MVP:** Active ragdoll VIP, suicidal hazard-seeking AI, 2–4 player grab/carry spring-dampers (`F = 280x - 34v`), tackle/shove impulse, alive-to-corpse transition, and 3D Penthouse Gala Ballroom.
+- [x] **Phase 2 — "Weekend at Bernie's" Stealth & Voice:** Proximity voice RMS -> real-time 3D corpse jaw lip-sync (`0°..42°`), patrolling guard inspection cones, voice-bluff suspicion decay, and 3 lethal hazards (Rooftop Sniper Laser, Poison Champagne Fountain, High-Voltage Balcony Ledge).
+- [x] **Phase 3 — Co-op & Quota Loop:** 22-byte quantized `<= 20 Hz` ragdoll sync (`< 2.4 KB/s`), AI Co-op Partner bodyguard assist, `$10,000` checkpoint/extraction quota loop, and live telemetry HUD.
 
 ---
 

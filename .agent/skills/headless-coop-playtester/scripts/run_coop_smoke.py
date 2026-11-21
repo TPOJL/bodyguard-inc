@@ -53,6 +53,18 @@ def scan_logs(log_files: dict[str, pathlib.Path]) -> list[str]:
     return failures
 
 
+def _can_bind_udp_localhost(port: int) -> bool:
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.bind(("127.0.0.1", port))
+        s.sendto(b"ping", ("127.0.0.1", port))
+        s.close()
+        return True
+    except OSError:
+        return False
+
+
 def run_godot_coop(godot_bin: str, port: int, duration: float, timeout: float) -> int:
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     harness = "res://tests/mp/mp_bootstrap_harness.gd"
@@ -61,17 +73,30 @@ def run_godot_coop(godot_bin: str, port: int, duration: float, timeout: float) -
     c1_log = LOG_DIR / "coop_smoke_client1.log"
     c2_log = LOG_DIR / "coop_smoke_client2.log"
 
+    udp_ok = _can_bind_udp_localhost(port)
+    ipc_arg: list[str] = []
+    if not udp_ok:
+        ipc_path = LOG_DIR / f"godot_ipc_{port}"
+        if ipc_path.exists():
+            for p in sorted(ipc_path.rglob("*"), reverse=True):
+                if p.is_file():
+                    p.unlink()
+                elif p.is_dir():
+                    p.rmdir()
+        ipc_path.mkdir(parents=True, exist_ok=True)
+        ipc_arg = [f"--ipc-dir={ipc_path}"]
+
     host_cmd = [
         godot_bin, "--headless", "--path", str(ROOT_DIR), "--script", harness,
-        "--", "--role=host", f"--port={port}", "--expected-clients=2", f"--duration={duration}",
+        "--", "--role=host", f"--port={port}", "--expected-clients=2", f"--duration={duration}", *ipc_arg,
     ]
     c1_cmd = [
         godot_bin, "--headless", "--path", str(ROOT_DIR), "--script", harness,
-        "--", "--role=client", "--bot-id=1", f"--port={port}", f"--duration={duration}",
+        "--", "--role=client", "--bot-id=1", f"--port={port}", f"--duration={duration}", *ipc_arg,
     ]
     c2_cmd = [
         godot_bin, "--headless", "--path", str(ROOT_DIR), "--script", harness,
-        "--", "--role=client", "--bot-id=2", f"--port={port}", f"--duration={duration}",
+        "--", "--role=client", "--bot-id=2", f"--port={port}", f"--duration={duration}", *ipc_arg,
     ]
 
     print(f"[coop-playtester] Launching 1 Host + 2 Clients via Godot ({godot_bin}) on 127.0.0.1:{port}...")

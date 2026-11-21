@@ -1,6 +1,7 @@
 class_name AudioInputDriver
 extends RefCounted
-## Proximity voice abstraction with deterministic MockAudioInput for headless testing.
+## Proximity voice abstraction with deterministic MockAudioInput for headless testing
+## and dynamic voice-bluff modulation for interactive gameplay.
 
 enum MockEnvelope {
 	SILENCE,
@@ -41,7 +42,21 @@ func sample_rms() -> float:
 				return 0.45
 			MockEnvelope.SCREAMING:
 				return 0.95
-	# Hardware microphone capture is wired in Phase 1; safe zero fallback in headless mode.
+	return 0.0
+
+
+func sample_interactive_rms(talk_held: bool, scream_held: bool, time_sec: float) -> float:
+	## Produces a lively syllabus-like RMS modulation when holding [V] (Talk) or [B] (Scream).
+	if _mock_enabled:
+		return sample_rms()
+	var safe_t: float = time_sec if is_finite(time_sec) else 0.0
+	if scream_held:
+		var jitter: float = sin(safe_t * 28.0) * 0.05
+		return clampf(0.92 + jitter, 0.82, 1.0)
+	if talk_held:
+		# Natural speech cadence (syllables at ~6 Hz + phrase contour at ~2.2 Hz)
+		var syllable: float = sin(safe_t * 19.0) * 0.14 + cos(safe_t * 11.0) * 0.08
+		return clampf(0.42 + syllable, 0.18, 0.64)
 	return 0.0
 
 

@@ -7,8 +7,14 @@ config_version=5
 
 config/name="BODYGUARD INC."
 config/description="2–4 player co-op physics chaos game: escort a suicidal low-IQ AI VIP through chaotic events—and if they die unnoticed, drag the ragdoll corpse Weekend at Bernie's style and talk into proximity voice chat to animate their jaw."
-run/main_scene="res://src/scenes/dummy_bootstrap.tscn"
+run/main_scene="res://src/scenes/gala_level.tscn"
 config/features=PackedStringArray("4.3", "Forward Plus")
+
+[display]
+
+window/size/viewport_width=1360
+window/size/viewport_height=820
+window/stretch/mode="canvas_items"
 
 [debug]
 
